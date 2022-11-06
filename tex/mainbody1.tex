@@ -1,0 +1,125 @@
+%=================================================================
+\section{Introduction}\label{sec-intro}
+With the increasing demand for public transportation, city dwellers now become more relied on share bikes to commute to their destinations. This report has investigated bike mobility and tried to build a machine learning model to predict the share bike demands in Washington, D.C. By using the historical bike usage data provided by the Capital Bikeshare program accompanied by the local weather data, we have initiated a supervised machine learning model with Random Forest, and reached a decent the RMSLE value at 0.10.
+
+With the increasing demand for public transportation, city dwellers now become more relied on share bikes to commute to their destinations. This report has investigated bike mobility and tried to build a machine learning model to predict the share bike demands in Washington, D.C. By using the historical bike usage data provided by the Capital Bikeshare program accompanied by the local weather data, we have initiated a supervised machine learning model with Random Forest, and reached a decent the RMSLE value at 0.10.
+
+In the following part, there are four sections to illustrate the model-building process from end to end. First, from the view of the investigation topic, the Preliminary Section would initially present the analysis result based on the raw data set in terms of outliers, data distribution, data standardization, and data types. Later, the method section would mainly introduce and brief the machine algorithms which can be potentially considered as the solution to the investigation topic. Then, in the experiment and analysis part, the detailed model-building process would be illustrated in detail in terms of data cleansing, feature engineering, model fitting, and evaluation. Finally, the conclusion could be made and make acknowledgment.
+
+
+\section{Preliminaries} \label{sec-preliminaries}
+
+Firstly, it has been required to predict the local hourly bike demand based on the hourly rental data and weather conditions spanning over the two years from 2011 to 2012 in the Washington D.C area. Obviously, this is a classic supervised learning problem in machine learning research as we have one target variable - count and multiple independent variables. Meanwhile, based on the definition of count (i.e., number of total rentals), this is a continuous variable that can vary to any number greater than or equal to zero (continuous variable), therefore, this can be narrowed down this problem to a regression problem.
+
+Based on the data been provided, the following concerns has been identified . 
+
+\begin{itemize}
+  \item Data types discrepancy in terms of meanings and definition [\ref{fig:diagram}]
+  \begin{itemize}
+    \item Ac can be seen in [\ref{fig:diagram}], for the datatime, it is suggested to be further parsed into hours, weekdays, and months to enable the algorithm to find the hidden pattern between rental counts and time, as it is highly likely that people's bike rentals behaviors are connected with their working time, days, and months.
+    \item For the season, it is suggested to change the integer into the category to treat each season equally instead of misleading the algorithm to mathematically compare among seasons. Same principle should also be applied on the attributes including weather, holiday, workingday.
+        \begin{figure}[!ht]
+        	\centering
+        	\setlength{\abovecaptionskip}{0.cm}
+        	\setlength{\belowcaptionskip}{-0.cm}
+        	\includegraphics[width=0.2\textwidth]{./figures/DataType.png}
+        	\caption{Data Description}
+        	\label{fig:diagram}
+        \end{figure}
+  \end{itemize}
+ 
+  \item Data Outliers Detection [\ref{fig:outliers}]
+  \begin{itemize}
+    \item As can been seen in the boxplot [\ref{fig:outliers}], there are a number of outliers (e.g., over 800 counts per hour) that can be observed. Therefore, it is necessary to apply a certain rule to remove them, based on the current research standard, the outlier boundaries is ±3 standard deviations from the mean.
+         \begin{figure}[!ht]
+        	\centering
+        	\setlength{\abovecaptionskip}{0.cm}
+        	\setlength{\belowcaptionskip}{-0.cm}
+        	\includegraphics[width=0.3\textwidth]{./figures/DataOutliers.png}
+        	\caption{Data Outliers}
+        	\label{fig:outliers}
+        \end{figure}
+  \end{itemize}
+ 
+  \item Correlation Analysis [\ref{fig:correlation}]
+   \begin{itemize}
+    \item To further analysis the attributes with numerical data type, as can be seen in [\ref{fig:correlation}], the correlation between atemp and temp is too high, which may be considered to drop one of them. Same scenario also happens on the relationship between registered and counts.
+     \begin{figure}[!ht]
+    	\centering
+    	\setlength{\abovecaptionskip}{0.cm}
+    	\setlength{\belowcaptionskip}{-0.cm}
+    	\includegraphics[width=0.3\textwidth]{./figures/Correlation.png}
+    	\caption{Correlation}
+    	\label{fig:correlation}
+    \end{figure}
+  \end{itemize}
+  
+  \item Skewness Distribution[\ref{fig:CountDistribution}][\ref{fig:windspeed}]
+    \begin{itemize}
+        \item As can be seen in skewness distribution of counts data series can be observed as positive[\ref{fig:CountDistribution}], the right tail is much longer than the left tail. It is considered to apply logarithm to reduce the positive skewness.
+        \item As can be seen in [\ref{fig:windspeed}], there are over 1200 records having zero wind speed, which may be a potential problem for prediction accuracy. To avoid the risk, the alternative is to predict these unforeseen zero wind speeds by linear regression
+         \begin{figure}[!ht]
+        	\centering
+        	\setlength{\abovecaptionskip}{0.cm}
+        	\setlength{\belowcaptionskip}{-0.cm}
+        	\includegraphics[width=0.3\textwidth]{./figures/CountDistribution.png}
+        	\caption{Count Distribution}
+        	\label{fig:CountDistribution}
+        \end{figure}
+         \begin{figure}[!ht]
+        	\centering
+        	\setlength{\abovecaptionskip}{0.cm}
+        	\setlength{\belowcaptionskip}{-0.cm}
+        	\includegraphics[width=0.3\textwidth]{./figures/windspeed.png}
+        	\caption{Windspeed}
+        	\label{fig:windspeed}
+        \end{figure}
+    \end{itemize}
+\end{itemize}
+
+\section{Method} \label{sec-method}
+
+Based on the dataset explored and the problem required to be investigated, the following machine learning algorithms are proposed as potential solutions.
+
+\begin{itemize}
+    \item Linear regression - the linear regression fits a linear model with coefficients w = (w1, …, wp) to minimize the residual sum of squares between the observed targets in the dataset, and the targets predicted by the linear approximation. In this case, we can also apply the following two extra methods to increase the accuracy: 1. Use the grid search (GridSearchCV) to exhaustively search over specified parameter values for an estimation; 2. Use the regularization penalty (Ridge) to balance the model prediction by giving an l2-norm regularization.
+    \item Ensemble Models (averaging or boosting methods) - In averaging methods, the driving principle is to build several estimators independently and then to average their predictions. On average, the combined estimator is usually better than any of the single base estimator because its variance is reduced. By contrast, in boosting methods, base estimators are built sequentially and one tries to reduce the bias of the combined estimator. The motivation is to combine several weak models to produce a powerful ensemble.
+\end{itemize}
+
+\section{Experiment and Analysis} \label{sec-experiment}
+In the experiment, the whole process would be elaborated in the following sequence.
+\begin{itemize}
+    \item Feature Engineering: transform datetime attributes into the following four attributes - month, weekday, date, hour; change the meaningless numeric features that we have identified as meaningless into categorical data type, which includes hour, weekday, month, season, weather, holiday, workingday.
+    \item Outlier Remove and Detection: the outlier boundaries with ±3 standard deviations from the mean should be removed.
+    \item Skewness Reducing: the positive/negative skewness distribution attribute (i.e., count) should be eliminated by using logarithm, square root, etc.,
+\end{itemize}
+
+Then, as can be seen in the following four charts, we have visualized the count by month, by the hour of a day with seasons label, by the hour of a day with weekday label, and by the hour of a day with casual/registered label. The obvious trend can be observed that June and July has the highest renting counts, 8 AM and 5 PM reaches the peak of the day for the bike renting in all four seasons and weekdays.
+\begin{figure}[!ht]
+	\centering
+	\setlength{\abovecaptionskip}{0.cm}
+	\setlength{\belowcaptionskip}{-0.cm}
+	\includegraphics[width=0.5\textwidth]{./figures/Vis-1.png}
+	\label{fig:vis-1}
+\end{figure}
+\begin{figure}[!ht]
+	\centering
+	\setlength{\abovecaptionskip}{0.cm}
+	\setlength{\belowcaptionskip}{-0.cm}
+	\includegraphics[width=0.5\textwidth]{./figures/Vis-2.png}
+	\label{fig:vis-2}
+\end{figure}
+
+Finally, the model would be built and evaluated by using RMSLE.
+\begin{figure}[!ht]
+	\centering
+	\setlength{\abovecaptionskip}{0.cm}
+	\setlength{\belowcaptionskip}{-0.cm}
+	\includegraphics[width=0.7\textwidth]{./figures/model.png}
+	\label{fig:model}
+\end{figure}
+
+\section{Conclusions} \label{sec-conclusions}
+
+Overall, this report has applied Python to conduct the bike rental forecast during each hour by using the hourly rental data spanning two years. The training set is comprised of the first 19 days of each month, while the test set is from the 20th to the end of the month. Based on the evaluation result provided by RMSLE, the model using random forest has reached the best outcome at a 0.103 RMSLE.
+
